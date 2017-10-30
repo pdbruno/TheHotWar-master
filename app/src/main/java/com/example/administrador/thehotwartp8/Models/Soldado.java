@@ -7,6 +7,8 @@ import org.cocos2d.actions.interval.MoveTo;
 import org.cocos2d.nodes.Sprite;
 import org.cocos2d.types.CCSize;
 
+import java.util.ArrayList;
+
 /**
  * Created by Administrador on 19/9/2017.
  */
@@ -15,6 +17,7 @@ public class Soldado {
     public int Vida;
     public Sprite Imagen;
     public int DañoPorBala;
+    public ArrayList<Bala> ArrayBalasActivas;
 
     public Bala CalcularDisparo(float PosXDisparo, float PosYDisparo, CCSize PantallaDelDispositivo) {
         Log.d("Diparo soldado","Se ejecuto el despiaro");
@@ -64,6 +67,17 @@ public class Soldado {
         Coord[1] = PosibleY;
 
         return Coord;
+    }
+
+    public void BajarVida(Soldado Victimario){
+        this.Vida -= Victimario.DañoPorBala;
+    }
+    public boolean VerificarVida(){
+        if(Vida < 0){
+            return true;
+        }else{
+            return false;
+        }
     }
 
 }

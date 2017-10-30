@@ -35,10 +35,6 @@ import java.util.concurrent.TimeUnit;
 public class clsJuego {
     CCGLSurfaceView _VistaDelJuego;
     public CCSize PantallaDelDispositivo;
-    public Sprite Objeto;
-    public Sprite Objeto2;
-    Sprite SpriteTocado;
-    Sprite DummySprite;
 
     public clsJuego(CCGLSurfaceView VistaDelJuego){
         Log.d("APA", "comienza el constructor");

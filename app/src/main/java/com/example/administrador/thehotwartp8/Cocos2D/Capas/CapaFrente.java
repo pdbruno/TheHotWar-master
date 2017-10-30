@@ -4,6 +4,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 
 import com.example.administrador.thehotwartp8.Models.Bala;
+import com.example.administrador.thehotwartp8.Models.Soldado;
 import com.example.administrador.thehotwartp8.Models.SoldadoEnemigo;
 import com.example.administrador.thehotwartp8.Models.SoldadoPropio;
 
@@ -26,21 +27,22 @@ import java.util.Random;
 
 public class CapaFrente extends Layer {
     CCSize PantallaDelDispositivo;
-    ArrayList<Bala> ArrayBalasActivas;
     SoldadoEnemigo Murica;
 
     public CapaFrente(CCSize PantallaDelDispositivo) {
         this.PantallaDelDispositivo = PantallaDelDispositivo;
-        this.setIsTouchEnabled(true);
-        Murica = new SoldadoEnemigo();
-        ArrayBalasActivas = new ArrayList<Bala>();
-        PonerObjetoPosInicial(SoldadoPropio.ElSoldado.Imagen);
 
+        this.setIsTouchEnabled(true);
+
+        Murica = new SoldadoEnemigo();
+
+        PonerObjetoPosInicial(SoldadoPropio.ElSoldado.Imagen);
         PonerObjetoPosInicial(Murica.Imagen);
         while(InterseccionEntreSprites(SoldadoPropio.ElSoldado.Imagen, Murica.Imagen)){
             PonerObjetoPosInicial(Murica.Imagen);
         }
         super.schedule("DetectarColisiones", 0.01f);
+        super.schedule("DisparoIA", 0.5f);
 
     }
     @Override
@@ -55,34 +57,11 @@ public class CapaFrente extends Layer {
         Disparo = Sequence.actions(Mover, RemoverDeCapa);
 
         super.addChild(LaBala.Imagen);
-        ArrayBalasActivas.add(LaBala);
+        SoldadoPropio.ElSoldado.ArrayBalasActivas.add(LaBala);
         LaBala.Imagen.runAction(Disparo);
-        ArrayBalasActivas.remove(LaBala);
         LaBala = null;
         return true;
     }
-
-    public void DetectarColisiones(float UltLlamada) {
-        //en un futuro tambien habria un for each recorriendo una lista de enemigos
-        if (ArrayBalasActivas.size() > 0) {
-            Log.d("Colision", "Apa");
-
-            for (Bala CarlitosBala: ArrayBalasActivas){
-                if (InterseccionEntreSprites(CarlitosBala.Imagen, Murica.Imagen)){
-                    super.removeChild(CarlitosBala.Imagen, true);
-
-                    ArrayBalasActivas.remove(CarlitosBala);
-                    CarlitosBala = null;
-                }
-            }
-        }
-
-    }
-
-    public void RemoverDeCapa(CocosNode ObjetoLlamador){
-        super.removeChild(ObjetoLlamador, true);
-    }
-
     public boolean ccTouchesMoved(MotionEvent event) {
 
         return true;
@@ -106,6 +85,56 @@ public class CapaFrente extends Layer {
 
         super.addChild(Objeto);
         return Poss;
+    }
+    public void DisparoIA(float UltLlamada) {
+        if(Murica != null){
+            Bala LaBala = Murica.CalcularDisparo(SoldadoPropio.ElSoldado.Imagen.getPositionX(),PantallaDelDispositivo.getHeight() - SoldadoPropio.ElSoldado.Imagen.getPositionY(), PantallaDelDispositivo);
+
+            IntervalAction Disparo;
+
+            MoveTo Mover = MoveTo.action(LaBala.Duracion, LaBala.PosXFinal, LaBala.PosYFinal);
+            CallFuncN RemoverDeCapa = CallFuncN.action(this, "RemoverDeCapa");
+
+            Disparo = Sequence.actions(Mover, RemoverDeCapa);
+
+            super.addChild(LaBala.Imagen);
+            Murica.ArrayBalasActivas.add(LaBala);
+            LaBala.Imagen.runAction(Disparo);
+            LaBala = null;
+        }else{
+            super.unschedule("DisparoIA");
+        }
+    }
+    public void DetectarColisiones(float UltLlamada) {
+        //en un futuro tambien habria un for each recorriendo una lista de enemigos
+        DetectarDisparo(SoldadoPropio.ElSoldado,Murica);
+        DetectarDisparo(Murica,SoldadoPropio.ElSoldado);
+
+    }
+    void DetectarDisparo(Soldado Victima, Soldado Vicitmario){
+        if (Vicitmario.ArrayBalasActivas.size() > 0) {
+            Log.d("Colision", "Apa");
+
+            for (Bala BalaActual: Vicitmario.ArrayBalasActivas){
+                if (InterseccionEntreSprites(BalaActual.Imagen, Victima.Imagen)){
+                    Victima.BajarVida(Vicitmario);
+                    boolean Muerto = Victima.VerificarVida();
+                    if(Muerto == true){
+                        RemoverDeCapa(Victima.Imagen);
+                        Victima = null;
+                    }
+                    BalaActual = RemoverBalaActiva(BalaActual, Vicitmario);
+                }
+            }
+        }
+    }
+    Bala RemoverBalaActiva(Bala BalaActual, Soldado Soldado){
+        super.removeChild(BalaActual.Imagen, true);
+        Soldado.ArrayBalasActivas.remove(BalaActual);
+        return null;
+    }
+    public void RemoverDeCapa(CocosNode ObjetoLlamador){
+        super.removeChild(ObjetoLlamador, true);
     }
 
     boolean InterseccionEntreSprites (Sprite Sprite1, Sprite Sprite2) {
